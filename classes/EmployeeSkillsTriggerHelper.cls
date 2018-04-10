@@ -8,4 +8,26 @@ public class EmployeeSkillsTriggerHelper {
                                                        employeeTotalAssignedTimeList,
                                                        employeesAvailability);
     }
+
+    public static void checkCountEmployeesOnProject(List<Employee_Skills__c> newEmloyees){
+
+        Set<Id> employeeIdSet = EmployeeSkillTriggerService.gerProjectIdSet(newEmloyees);
+        Map<Id,Map<String,Integer>> newEmployeeCount = EmployeeSkillTriggerService.getEmloyeesCountForProject(employeeIdSet);
+        EmployeeSkillTriggerService.updateEmployeeCountForProject(newEmployeeCount);
+
+    }  
+
+    public static void checkCountEmployeesOnProjectAfterDelete(List<Employee_Skills__c> oldEmloyees){
+
+        Map<Id,Id> projectEmployeeId= EmployeeSkillTriggerService.getProjectEmployeeId(oldEmloyees);
+        List<Id> employeeIdSet = projectEmployeeId.values();
+
+        Employee__c[] employeeDepartment = [SELECT IT_Department__c
+                                            FROM Employee__c
+                                            WHERE Id IN :employeeIdSet ];
+        
+        Map<Id,Map<String,Integer>> newEmployeeCount = EmployeeTriggerService.getDeletedEmployeesCount(employeeDepartment);
+        EmployeeSkillTriggerService.updateEmployeeCountAfterDelete(projectEmployeeId, newEmployeeCount);
+
+    }
 }

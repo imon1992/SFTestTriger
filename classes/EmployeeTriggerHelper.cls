@@ -16,4 +16,17 @@ public class EmployeeTriggerHelper {
                                                             lastNamesList,birthdaysList);
         EmployeeTriggerService.checkDuplicateRecord(newEmloyee,duplicateList);                    
     }
+
+    public static void checkCountEmployeesOnProject(List<Employee__c> oldEmloyees, List<Employee__c> newEmloyees){
+
+        Set<Id> employeeIdSet = EmployeeTriggerService.gerProjectIdSet(newEmloyees);
+        Map<Id,Map<String,Integer>> newEmployeeCount = EmployeeTriggerService.getEmloyeesCountForProject(employeeIdSet);
+        EmployeeTriggerService.updateEmployeeCountForProject(newEmployeeCount);
+    }  
+    public static void checkCountEmployeesOnProjectAfterDelete(List<Employee__c> oldEmloyees){
+        Set<Id> employeeIdSet = EmployeeTriggerService.getEmploeeIds(oldEmloyees);
+        Map<Id,Map<String,Integer>> newEmployeeCount = EmployeeTriggerService.getDeletedEmployeesCount(oldEmloyees);
+        EmployeeTriggerService.updateEmployeeCountAfterDelete(employeeIdSet, newEmployeeCount);
+    }
+
 }
