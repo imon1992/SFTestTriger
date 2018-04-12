@@ -99,7 +99,7 @@ public class EmployeeSkillTriggerService {
         List<aggregateresult> employeeProjectCount = [SELECT Employee__r.IT_Department__c,COUNT_DISTINCT(Employee__c ) employeeCount,Project__c 
                                                FROM Employee_Skills__c 
                                                WHERE (Employee__r.IT_Department__c = 'DEV' OR Employee__r.IT_Department__c = 'QA') AND 
-                                               Employee__r.isActive__c= true AND Project__c in :projectId
+                                               Employee__r.isActive__c= true AND Project__c in :projectId AND Employee__r.End_Date__c > TODAY
                                                GROUP BY Employee__r.IT_Department__c,Project__c ];
 
         Map<id,Map<String,Integer>> newEmployeeCount= new Map<id,Map<String,Integer>>();
@@ -144,42 +144,61 @@ public class EmployeeSkillTriggerService {
 
     public static Map<Id,Id> getProjectEmployeeId(List<Employee_Skills__c> oldEmloyees){
         Map<Id,Id> projectEmployeeId= new Map<Id,Id>();
+        // List<Id>
         for(Employee_Skills__c newEmployee: oldEmloyees){
             projectEmployeeId.put(newEmployee.Project__c,newEmployee.Employee__c);
         }
         return projectEmployeeId;
     }
 
-    public static Map<Id,Map<String,Integer>> getDeletedEmployeesCount(List<Employee__c> oldEmloyees){
+    public static Map<Id,Map<String,Integer>> getDeletedEmployeesCount(List<Employee__c> oldEmloyees,Map<Id,Id> projectEmployeeId){
+
         Map<Id,Map<String,Integer>> newEmployeeCount= new Map<Id,Map<String,Integer>>();
+        Set<Id> projectIdSet = projectEmployeeId.keySet();
+        List<Id> employeeIds = new List<Id>();
+        for(Employee__c employeeCount : oldEmloyees ){
+            employeeIds.add(employeeCount.Id);
+        }
+        List<AggregateResult> countEmployeeOnProjectList = [SELECT count(id) employeeCount,Employee__c
+                                                        FROM Employee_Skills__c 
+                                                        WHERE Employee__c IN :employeeIds AND Project__c in :projectIdSet
+                                                        GROUP BY Employee__c];
+    System.debug(countEmployeeOnProjectList);
         for(Employee__c employeeCount : oldEmloyees ){
             Map<String,Integer>newEmployeeCountForOnePosition = new Map<String,Integer>();
-            if(newEmployeeCount.containsKey(employeeCount.Id)){
-                if(employeeCount.IT_Department__c == 'QA'){
-                    newEmployeeCountForOnePosition.put('QA',newEmployeeCountForOnePosition.get('QA')+1);
+            System.debug(countEmployeeOnProjectList);
+            if(countEmployeeOnProjectList.size() == 0){
+                    if(newEmployeeCount.containsKey(employeeCount.Id)){
+                        if(employeeCount.IT_Department__c == 'QA'){
+                            newEmployeeCountForOnePosition.put('QA',newEmployeeCountForOnePosition.get('QA')+1);
+                        }
+                        if(employeeCount.IT_Department__c == 'DEV'){
+                            newEmployeeCountForOnePosition.put('DEV',newEmployeeCountForOnePosition.get('DEV')+1);
+                        }
+                    }else{
+                        if(employeeCount.IT_Department__c == 'QA'){
+                            newEmployeeCountForOnePosition.put('QA',1);
+                        }
+                        if(employeeCount.IT_Department__c == 'DEV'){
+                            newEmployeeCountForOnePosition.put('DEV',1);
+                        }
+                    }
+                    newEmployeeCount.put(employeeCount.Id,newEmployeeCountForOnePosition);
                 }
-                if(employeeCount.IT_Department__c == 'DEV'){
-                    newEmployeeCountForOnePosition.put('DEV',newEmployeeCountForOnePosition.get('DEV')+1);
-                }
-                newEmployeeCount.put(employeeCount.Id,newEmployeeCountForOnePosition);
-            }else{
-                if(employeeCount.IT_Department__c == 'QA'){
-                    newEmployeeCountForOnePosition.put('QA',1);
-                }
-                if(employeeCount.IT_Department__c == 'DEV'){
-                    newEmployeeCountForOnePosition.put('DEV',1);
-                }
-            }
-            newEmployeeCount.put(employeeCount.Id,newEmployeeCountForOnePosition);
+            // }
+            
         }
         return newEmployeeCount;
     }
 
     public static void updateEmployeeCountAfterDelete(Map<Id,Id> projectIdEmployeeId,Map<Id,Map<String,Integer>> newEmployeeCount){
         Set<Id> employeeIdSet = projectIdEmployeeId.keySet();
-        Project__c[] employeeCountForProject = [SELECT Developers__c, QA_s__c, id
-                                                        FROM Project__c 
-                                                        WHERE id in :employeeIdSet];
+        Project__c[] employeeCountForProject = new List<Project__c>();
+        if(newEmployeeCount.size() > 0){
+            employeeCountForProject = [SELECT Developers__c, QA_s__c, id
+                                                            FROM Project__c 
+                                                            WHERE id in :employeeIdSet];
+        }
 
         Project__c[] projectForUpdateList = new List<Project__c>();
         for(Project__c newEmployeeCountForProject: employeeCountForProject){

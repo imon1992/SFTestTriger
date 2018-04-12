@@ -19,14 +19,29 @@ public class EmployeeTriggerHelper {
 
     public static void checkCountEmployeesOnProject(List<Employee__c> oldEmloyees, List<Employee__c> newEmloyees){
 
-        Set<Id> employeeIdSet = EmployeeTriggerService.gerProjectIdSet(newEmloyees);
-        Map<Id,Map<String,Integer>> newEmployeeCount = EmployeeTriggerService.getEmloyeesCountForProject(employeeIdSet);
-        EmployeeTriggerService.updateEmployeeCountForProject(newEmployeeCount);
+        Map<Id,EmployeeTriggerService.DifferenceEmployeeWrapper> differentEmployeeMap = EmployeeTriggerService.checkDifferenceBeetweenNewAndOldTriggerValues(oldEmloyees,newEmloyees);
+        Map<id,Map<String,Integer>> positionCountAfterUpdate = EmployeeTriggerService.generateProjectValuesForUpdate(differentEmployeeMap);
+        EmployeeTriggerService.updateProjectEmployeeCount(positionCountAfterUpdate);
     }  
     public static void checkCountEmployeesOnProjectAfterDelete(List<Employee__c> oldEmloyees){
-        Set<Id> employeeIdSet = EmployeeTriggerService.getEmploeeIds(oldEmloyees);
+        Set<Id> employeeIdSet = EmployeeTriggerService.getEmployeeIds(oldEmloyees);
         Map<Id,Map<String,Integer>> newEmployeeCount = EmployeeTriggerService.getDeletedEmployeesCount(oldEmloyees);
         EmployeeTriggerService.updateEmployeeCountAfterDelete(employeeIdSet, newEmployeeCount);
+    }
+
+    public static void setValidTimeIfPartTimeIsFalse(List<Employee__c> newEmployeeValueList){
+        for(Employee__c newEmployeeValue : newEmployeeValueList){
+            if(newEmployeeValue.Part_Time__c == false){
+                newEmployeeValue.Availability__c = 8;
+            }
+        }
+    }
+
+    public static void undeleteEmployee(List<Employee__c> employeeForUndelete){
+        Map<Id,EmployeeTriggerService.DifferenceEmployeeWrapper> valuesAfterUndelete = EmployeeTriggerService.generateundeleteMap(employeeForUndelete);
+        
+        Map<id,Map<String,Integer>> positionCountAfterUpdate = EmployeeTriggerService.generateProjectValuesForUpdate(valuesAfterUndelete);
+        EmployeeTriggerService.updateProjectEmployeeCount(positionCountAfterUpdate);
     }
 
 }

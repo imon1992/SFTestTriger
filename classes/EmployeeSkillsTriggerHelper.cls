@@ -24,10 +24,15 @@ public class EmployeeSkillsTriggerHelper {
 
         Employee__c[] employeeDepartment = [SELECT IT_Department__c
                                             FROM Employee__c
-                                            WHERE Id IN :employeeIdSet ];
-        
-        Map<Id,Map<String,Integer>> newEmployeeCount = EmployeeTriggerService.getDeletedEmployeesCount(employeeDepartment);
+                                            WHERE Id IN :employeeIdSet AND isActive__c = true];
+
+        Map<Id,Map<String,Integer>> newEmployeeCount = EmployeeSkillTriggerService.getDeletedEmployeesCount(employeeDepartment,projectEmployeeId);
+        System.debug(newEmployeeCount);
         EmployeeSkillTriggerService.updateEmployeeCountAfterDelete(projectEmployeeId, newEmployeeCount);
+
+    }
+
+    public static void updateEmployeeCountAfterUndelete(List<Employee_Skills__c> employeeSkilsAfterUndelete){
 
     }
 }

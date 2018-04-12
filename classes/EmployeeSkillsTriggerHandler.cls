@@ -14,6 +14,8 @@ public class EmployeeSkillsTriggerHandler {
 
             } else if(Trigger.isDelete){
                 EmployeeSkillsTriggerHelper.checkCountEmployeesOnProjectAfterDelete(Trigger.old);
+            } else if(Trigger.isUndelete){
+                EmployeeSkillsTriggerHelper.checkCountEmployeesOnProject(Trigger.new);
             }
         }
     }
